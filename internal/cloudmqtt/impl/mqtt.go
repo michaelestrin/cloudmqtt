@@ -27,10 +27,10 @@ const qosAtLeastOnce = 1
 
 // mqtt is a receiver wrapping a one-way MQTTS implementation.
 type mqtt struct {
-	loggingClient logger.LoggingClient
-	client        mqttlib.Client
-	dataTopic     string
-	commandTopic  string
+	loggingClient  logger.LoggingClient
+	client         mqttlib.Client
+	eventTopic     string
+	newDeviceTopic string
 }
 
 // NewMqttInstanceForCloud is a constructor that returns an mqtt receiver configured for cloud-based MQTTS.
@@ -42,13 +42,13 @@ func NewMqttInstanceForCloud(
 	userName string,
 	password string,
 	server string,
-	dataTopic string,
-	commandTopic string) (q *mqtt) {
+	eventTopic string,
+	newDeviceTopic string) (q *mqtt) {
 
 	q = &mqtt{
-		loggingClient: loggingClient,
-		dataTopic:     dataTopic,
-		commandTopic:  commandTopic,
+		loggingClient:  loggingClient,
+		eventTopic:     eventTopic,
+		newDeviceTopic: newDeviceTopic,
 	}
 
 	tlsConfig := &tls.Config{}
@@ -92,12 +92,12 @@ func send(q *mqtt, topicName string, content []byte) bool {
 	return true
 }
 
-// DataSender method transmits content to northbound MQTT data topic.
-func (q *mqtt) DataSender(data []byte) bool {
-	return send(q, q.dataTopic, data)
+// EventSender method transmits content to northbound MQTT event topic.
+func (q *mqtt) EventSender(content []byte) bool {
+	return send(q, q.eventTopic, content)
 }
 
-// CommandSender method transmits content to northbound MQTT command topic.
-func (q *mqtt) CommandSender(command []byte) bool {
-	return send(q, q.commandTopic, command)
+// NewDeviceSender method transmits content to northbound MQTT new device topic.
+func (q *mqtt) NewDeviceSender(content []byte) bool {
+	return send(q, q.newDeviceTopic, content)
 }

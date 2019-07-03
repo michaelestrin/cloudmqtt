@@ -50,8 +50,8 @@ func FactoryTransport(sdk *appsdk.AppFunctionsSDK) func(edgexcontext *appcontext
 		setting(sdk.LoggingClient, settings, "userName"),
 		setting(sdk.LoggingClient, settings, "password"),
 		setting(sdk.LoggingClient, settings, "server"),
-		setting(sdk.LoggingClient, settings, "dataTopic"),
-		setting(sdk.LoggingClient, settings, "commandTopic"))
+		setting(sdk.LoggingClient, settings, "eventTopic"),
+		setting(sdk.LoggingClient, settings, "newDeviceTopic"))
 
 	marshaller := json.Marshal
 
@@ -65,7 +65,7 @@ func FactoryTransport(sdk *appsdk.AppFunctionsSDK) func(edgexcontext *appcontext
 		},
 		nil)
 
-	notifier := impl.NewNotifier(sdk.LoggingClient, mqtt.CommandSender, marshaller, metadataClient)
+	notifier := impl.NewNotifier(sdk.LoggingClient, mqtt.NewDeviceSender, marshaller, metadataClient)
 
-	return NewTransport(sdk.LoggingClient, 1*time.Second, mqtt.DataSender, notifier.Notify, marshaller).Run
+	return NewTransport(sdk.LoggingClient, 1*time.Second, mqtt.EventSender, notifier.Notify, marshaller).Run
 }
