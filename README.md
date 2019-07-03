@@ -49,7 +49,7 @@ This service is driven by a `configuration.toml` [TOML-based](https://en.wikiped
 - `commandTopic` - a string, this defines the MQTT topic that will receive device metadata.
 
 A sample configuration file can be found at 
-    [`configs/configuration.toml`](https://gitlab.com/michaelestrin/cloudmqtt/blob/master/configs/configuration.toml).
+    [`configs/configuration.toml`](https://github.com/michaelestrin/cloudmqtt/blob/master/configs/configuration.toml).
     
     
 ## Code
