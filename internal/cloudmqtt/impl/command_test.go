@@ -12,30 +12,34 @@
  * the License.
  *******************************************************************************/
 
-package main
+package impl
 
 import (
-	"fmt"
-	"github.com/dell-iot/cloudmqtt/internal/cloudmqtt"
-	"github.com/edgexfoundry/app-functions-sdk-go/appsdk"
+	"github.com/dell-iot/cloudmqtt/internal/cloudmqtt/test/stub"
+	"github.com/edgexfoundry/go-mod-core-contracts/clients/logger"
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
-// main leverages the EdgeX Applications Functions SDK to create one-way export of device metadata and readings to
-// Cloud via MQTTS
-func main() {
-	sdk := &appsdk.AppFunctionsSDK{ServiceKey: "CloudMQTT"}
-	if err := sdk.Initialize(); err != nil {
-		fmt.Printf("SDK initialization failed: %v", err)
-		return
-	}
+//
+//  SUT factory
+//
 
-	transport := cloudmqtt.FactoryTransport(sdk)
-	if err := sdk.SetFunctionsPipeline(transport.Run); err != nil {
-		sdk.LoggingClient.Error(fmt.Sprintf("main sdk.SetPipeline failed: %v", err))
-		return
-	}
+func newCommandHandlerSUT(loggingClient logger.LoggingClient) *commandHandler {
+	return NewCommandHandler(loggingClient)
+}
 
-	sdk.MakeItRun()
+//
+//  unit tests
+//
 
-	transport.CleanUp()
+func TestHandlerCallLogsDebug(t *testing.T) {
+	loggingClient := stub.NewLoggerStub()
+	command := uuid.New().String()
+	sut := newCommandHandlerSUT(loggingClient)
+
+	sut.Receiver(command)
+
+	assert.True(t, loggingClient.SpecificDebugOccurred(receivedCommandLogMessage(command)))
 }

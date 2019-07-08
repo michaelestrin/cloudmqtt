@@ -18,7 +18,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/dell-iot/cloudmqtt/internal/cloudmqtt/impl"
-	"github.com/edgexfoundry/app-functions-sdk-go/appcontext"
 	"github.com/edgexfoundry/app-functions-sdk-go/appsdk"
 	"github.com/edgexfoundry/go-mod-core-contracts/clients"
 	"github.com/edgexfoundry/go-mod-core-contracts/clients/logger"
@@ -39,7 +38,7 @@ func setting(loggingClient logger.LoggingClient, settings map[string]string, key
 }
 
 // FactoryTransport returns a function that can be called by the EdgeX Applications Functions SDK.
-func FactoryTransport(sdk *appsdk.AppFunctionsSDK) func(edgexcontext *appcontext.Context, params ...interface{}) (bool, interface{}) {
+func FactoryTransport(sdk *appsdk.AppFunctionsSDK) *transport {
 	settings := sdk.ApplicationSettings()
 
 	mqtt := impl.NewMqttInstanceForCloud(
@@ -51,7 +50,9 @@ func FactoryTransport(sdk *appsdk.AppFunctionsSDK) func(edgexcontext *appcontext
 		setting(sdk.LoggingClient, settings, "password"),
 		setting(sdk.LoggingClient, settings, "server"),
 		setting(sdk.LoggingClient, settings, "eventTopic"),
-		setting(sdk.LoggingClient, settings, "newDeviceTopic"))
+		setting(sdk.LoggingClient, settings, "newDeviceTopic"),
+		setting(sdk.LoggingClient, settings, "commandTopic"),
+		impl.NewCommandHandler(sdk.LoggingClient).Receiver)
 
 	marshaller := json.Marshal
 
@@ -67,5 +68,5 @@ func FactoryTransport(sdk *appsdk.AppFunctionsSDK) func(edgexcontext *appcontext
 
 	notifier := impl.NewNotifier(sdk.LoggingClient, mqtt.NewDeviceSender, marshaller, metadataClient)
 
-	return NewTransport(sdk.LoggingClient, 1*time.Second, mqtt.EventSender, notifier.Notify, marshaller).Run
+	return NewTransport(sdk.LoggingClient, 1*time.Second, mqtt.EventSender, notifier.Notify, marshaller, mqtt.CleanUp)
 }

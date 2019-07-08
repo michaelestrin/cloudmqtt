@@ -19,14 +19,20 @@ import (
 	"github.com/edgexfoundry/go-mod-core-contracts/models"
 )
 
-// Sender defines function contract for transmitting bytes to Milky Way
+// Sender defines function contract for transmitting bytes to Cloud.
 type Sender func(data []byte) bool
 
-// Notifier defines function contract for notifying Milky Way of newly added device's metadata
+// Notifier defines function contract for notifying Cloud of newly added device's metadata.
 type Notifier func(event *models.Event) bool
 
-// Marshaller defines function contract for marshalling type to []byte; supports unit testing
+// Receiver defines function contract for handling southbound command received from Cloud.
+type Receiver func(command string)
+
+// Marshaller defines function contract for marshalling type to []byte; supports unit testing.
 type Marshaller func(v interface{}) ([]byte, error)
+
+// CleanUp defines function contract for end of execution clean up activity.
+type CleanUp func()
 
 // MetadataClient defines interface for interacting with EdgeX core-metadata service; defined to facilitate
 // unit testing.
@@ -36,7 +42,7 @@ type MetadataClient interface {
 }
 
 // EdgeXContext defines interface for interacting with Applications Functions SDK's edgexcontext; defined to facilitate
-// unit testing
+// unit testing.
 type EdgeXContext interface {
 	MarkAsPushed() error
 }

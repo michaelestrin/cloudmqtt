@@ -31,6 +31,7 @@ type transport struct {
 	send                         contract.Sender
 	notify                       contract.Notifier
 	marshal                      contract.Marshaller
+	cleanUp                      contract.CleanUp
 	wg                           sync.WaitGroup
 	events                       chan *models.Event
 }
@@ -42,7 +43,8 @@ func NewTransport(
 	sendFailureWaitInNanoseconds time.Duration,
 	send contract.Sender,
 	notify contract.Notifier,
-	marshal contract.Marshaller) *transport {
+	marshal contract.Marshaller,
+	cleanUp contract.CleanUp) *transport {
 
 	t := &transport{
 		loggingClient:                loggingClient,
@@ -50,6 +52,7 @@ func NewTransport(
 		send:                         send,
 		notify:                       notify,
 		marshal:                      marshal,
+		cleanUp:                      cleanUp,
 		events:                       make(chan *models.Event, 16),
 	}
 	t.wg.Add(1)
@@ -130,10 +133,9 @@ func (t *transport) Run(EdgeXContext *appcontext.Context, params ...interface{})
 	return t.run(EdgeXContext, params[0])
 }
 
-// waitForCompletion is a unit test utility method that ensures the newDeviceHandler() goroutine has completed
-// before evaluating the results of the test.  This method should be called in unit tests after exercising the
-// system under test and before asserting the test result.
-func (t *transport) waitForCompletion() {
+// CleanUp method ensures the newDeviceHandler() goroutine has completed.
+func (t *transport) CleanUp() {
 	close(t.events)
 	t.wg.Wait()
+	t.cleanUp()
 }

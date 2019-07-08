@@ -1,11 +1,17 @@
-## michaelestrin/cloudmqtt -- Example One-Way EdgeX Cloud MQTTS Service
+## michaelestrin/cloudmqtt -- Example EdgeX-Cloud MQTTS Service
 
 ### Overview
 
-This service is build upon the EdgeX Applications Functions SDK.  It receives northbound events and forwards them 
-    to a user-defined topic on an upstream MQTTS server.  When an event references a device this service hasn't seen 
-    before, the service will separately query the EdgeX core-metadata service for the device's metadata and forward 
-    the result to a separate user-defined topic on an upstream MQTTS server.   
+This service is build upon the EdgeX Applications Functions SDK.  
+
+It receives northbound events and forwards them to a user-defined topic on an upstream MQTTS server.  When an event 
+    references a device this service hasn't seen before, the service will separately query the EdgeX core-metadata 
+    service for the device's metadata and forward the result to a separate user-defined topic on an upstream MQTTS 
+    server.
+    
+It receives southbound commands and logs them.  As there is no defined standard for translating command content received
+    via MQTT message into specific core-command api calls, the provided `impl.commandHandler.Receiver` must be modified
+    to translate the incoming command string into call to appropriate core-command endpoint.
 
 ### Table of Contents
 
@@ -26,8 +32,8 @@ This service requires a running instance of EdgeX.
 During development, I used the tip of master (updating as changes were made) of 
     [edgexfoundry/edgex-go](https://github.com/edgexfoundry/edgex-go) and 
     [edgexfoundry/device-random](https://github.com/edgexfoundry/device-random) to run the supporting services 
-    locally. Since this sample service is build upon the EdgeX Applications Functions SDK, it required a post-Delhi release 
-    version of the source.  
+    locally. Since this sample service is build upon the EdgeX Applications Functions SDK, it required a post-Delhi 
+    release version of the source.  
     
 ## Configuration
 
@@ -56,14 +62,15 @@ A sample configuration file can be found at
 
 ### Architecture
 
-This service implementation leverages constructor-based [dependency injection](https://en.wikipedia.org/wiki/Dependency_injection) to
-    facilitate decoupling and testability. A factory function is called to return an Applications Functions 
-    SDK-compatible transform function that is subsequently called by the SDK. 
+This service implementation leverages constructor-based 
+    [dependency injection](https://en.wikipedia.org/wiki/Dependency_injection) to facilitate decoupling and testability. 
+    A factory function is called to return an Applications Functions SDK-compatible transform function that is 
+    subsequently called by the SDK. 
     
 ### Project Layout
 
-The project loosely follows the [Standard Go Project Layout](https://github.com/golang-standards/project-layout). Specifically, 
-    the project is structured as follows:
+The project loosely follows the [Standard Go Project Layout](https://github.com/golang-standards/project-layout). 
+    Specifically, the project is structured as follows:
 
 ```
 cmd/                     - main project application

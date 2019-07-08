@@ -89,7 +89,7 @@ func newMetadataClientImplReturnSuccess() contract.MetadataClient {
 //  SUT factory
 //
 
-func newSUT(
+func newNotifierSUT(
 	loggingClient logger.LoggingClient,
 	sender contract.Sender,
 	marshal contract.Marshaller,
@@ -103,7 +103,7 @@ func newSUT(
 //
 
 func TestNotifyCallToMetadataClientFailureReturnsFalse(t *testing.T) {
-	sut := newSUT(
+	sut := newNotifierSUT(
 		stub.NewLoggerStub(),
 		stub.NewSenderImpl().Send,
 		json.Marshal,
@@ -118,7 +118,7 @@ func TestNotifyCallToMetadataClientFailureReturnsFalse(t *testing.T) {
 func TestNotifyCallToMetadataClientFailureLogsError(t *testing.T) {
 	loggingClient := stub.NewLoggerStub()
 	errorMessage := uuid.New().String()
-	sut := newSUT(
+	sut := newNotifierSUT(
 		loggingClient,
 		stub.NewSenderImpl().Send,
 		json.Marshal,
@@ -132,7 +132,7 @@ func TestNotifyCallToMetadataClientFailureLogsError(t *testing.T) {
 
 func TestSendNotCalledWhenCallToMetadataClientFails(t *testing.T) {
 	sender := stub.NewSenderImpl()
-	sut := newSUT(
+	sut := newNotifierSUT(
 		stub.NewLoggerStub(),
 		sender.Send,
 		json.Marshal,
@@ -146,7 +146,7 @@ func TestSendNotCalledWhenCallToMetadataClientFails(t *testing.T) {
 
 func TestNotifyCallToMetadataClientSuccessDoesNotLogError(t *testing.T) {
 	loggingClient := stub.NewLoggerStub()
-	sut := newSUT(loggingClient, stub.NewSenderImpl().Send, json.Marshal, newMetadataClientImplReturnSuccess())
+	sut := newNotifierSUT(loggingClient, stub.NewSenderImpl().Send, json.Marshal, newMetadataClientImplReturnSuccess())
 	event := stub.NewEvent()
 
 	sut.Notify(&event)
@@ -156,7 +156,7 @@ func TestNotifyCallToMetadataClientSuccessDoesNotLogError(t *testing.T) {
 
 func TestNotifyCallToMetadataClientSuccessReturnsTrue(t *testing.T) {
 	loggingClient := stub.NewLoggerStub()
-	sut := newSUT(loggingClient, stub.NewSenderImpl().Send, json.Marshal, newMetadataClientImplReturnSuccess())
+	sut := newNotifierSUT(loggingClient, stub.NewSenderImpl().Send, json.Marshal, newMetadataClientImplReturnSuccess())
 	event := stub.NewEvent()
 
 	result := sut.Notify(&event)
@@ -165,7 +165,7 @@ func TestNotifyCallToMetadataClientSuccessReturnsTrue(t *testing.T) {
 }
 
 func TestNotifyCallToMarshalFailureReturnsFalse(t *testing.T) {
-	sut := newSUT(
+	sut := newNotifierSUT(
 		stub.NewLoggerStub(),
 		stub.NewSenderImpl().Send,
 		helper.FactoryJsonMarshalFuncReturnsFailureOnFirstCall(),
@@ -179,7 +179,7 @@ func TestNotifyCallToMarshalFailureReturnsFalse(t *testing.T) {
 
 func TestNotifyCallToMarshalFailureLogsError(t *testing.T) {
 	loggingClient := stub.NewLoggerStub()
-	sut := newSUT(
+	sut := newNotifierSUT(
 		loggingClient,
 		stub.NewSenderImpl().Send,
 		helper.FactoryJsonMarshalFuncReturnsFailureOnFirstCall(),
@@ -193,7 +193,7 @@ func TestNotifyCallToMarshalFailureLogsError(t *testing.T) {
 
 func TestSendNotCalledWhenCallToMarshalFails(t *testing.T) {
 	sender := stub.NewSenderImpl()
-	sut := newSUT(
+	sut := newNotifierSUT(
 		stub.NewLoggerStub(),
 		sender.Send,
 		helper.FactoryJsonMarshalFuncReturnsFailureOnFirstCall(),
@@ -207,7 +207,7 @@ func TestSendNotCalledWhenCallToMarshalFails(t *testing.T) {
 
 func TestNotifyCallToMarshalSuccessDoesNotLogError(t *testing.T) {
 	loggingClient := stub.NewLoggerStub()
-	sut := newSUT(loggingClient, stub.NewSenderImpl().Send, json.Marshal, newMetadataClientImplReturnSuccess())
+	sut := newNotifierSUT(loggingClient, stub.NewSenderImpl().Send, json.Marshal, newMetadataClientImplReturnSuccess())
 	event := stub.NewEvent()
 
 	sut.Notify(&event)
@@ -217,7 +217,7 @@ func TestNotifyCallToMarshalSuccessDoesNotLogError(t *testing.T) {
 
 func TestNotifyCallToMarshalSuccessReturnsTrue(t *testing.T) {
 	loggingClient := stub.NewLoggerStub()
-	sut := newSUT(loggingClient, stub.NewSenderImpl().Send, json.Marshal, newMetadataClientImplReturnSuccess())
+	sut := newNotifierSUT(loggingClient, stub.NewSenderImpl().Send, json.Marshal, newMetadataClientImplReturnSuccess())
 	event := stub.NewEvent()
 
 	result := sut.Notify(&event)
@@ -227,7 +227,7 @@ func TestNotifyCallToMarshalSuccessReturnsTrue(t *testing.T) {
 
 func TestNotifyCallsSenderOnce(t *testing.T) {
 	sender := stub.NewSenderImpl()
-	sut := newSUT(stub.NewLoggerStub(), sender.Send, json.Marshal, newMetadataClientImplReturnSuccess())
+	sut := newNotifierSUT(stub.NewLoggerStub(), sender.Send, json.Marshal, newMetadataClientImplReturnSuccess())
 	event := stub.NewEvent()
 
 	sut.Notify(&event)

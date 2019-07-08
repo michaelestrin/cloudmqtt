@@ -53,4 +53,5 @@ server="[serverName]"
 edgeXMetaDataUri='http://localhost:48081'
 
 eventTopic="events"
-newDeviceTopic="commands"
+newDeviceTopic="newDevices"
+commandTopic="commands"

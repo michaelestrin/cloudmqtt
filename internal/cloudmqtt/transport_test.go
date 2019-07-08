@@ -77,22 +77,32 @@ func (e *edgeXContextImpl) MarkAsPushed() error {
 	return e.markAsPushedResult
 }
 
+type cleanUpImpl struct {
+	CleanUpCalledCount int
+}
+
+func newCleanUpImpl() *cleanUpImpl {
+	return &cleanUpImpl{
+		CleanUpCalledCount: 0,
+	}
+}
+
+func (c *cleanUpImpl) CleanUp() {
+	c.CleanUpCalledCount++
+}
+
 //
 //  SUT factory
 //
 
-func newSUT(
+func newTransportSUT(
 	loggingClient logger.LoggingClient,
 	sender contract.Sender,
 	notifier contract.Notifier,
-	marshal contract.Marshaller) *transport {
+	marshal contract.Marshaller,
+	cleanUp contract.CleanUp) *transport {
 
-	return NewTransport(
-		loggingClient,
-		sendFailureWaitInNanosecondsForTesting,
-		sender,
-		notifier,
-		marshal)
+	return NewTransport(loggingClient, sendFailureWaitInNanosecondsForTesting, sender, notifier, marshal, cleanUp)
 }
 
 //
@@ -155,62 +165,62 @@ func factorySendResultFalseOnceThenTrueFromThenOn() stub.SendResultFunc {
 //
 
 func TestCallTransportWithNoParametersReturnsTrueForContinuePipeline(t *testing.T) {
-	sut := newSUT(stub.NewLoggerStub(), stub.NewSenderImpl().Send, newNotifierImpl().notify, json.Marshal)
+	sut := newTransportSUT(stub.NewLoggerStub(), stub.NewSenderImpl().Send, newNotifierImpl().notify, json.Marshal, newCleanUpImpl().CleanUp)
 
 	continuePipeline, _ := sut.run(newEdgeXContextImpl())
-	sut.waitForCompletion()
+	sut.CleanUp()
 
 	assert.True(t, continuePipeline)
 }
 
 func TestCallTransportWithEventParameterReturnsPassedEventParameter(t *testing.T) {
-	sut := newSUT(stub.NewLoggerStub(), stub.NewSenderImpl().Send, newNotifierImpl().notify, json.Marshal)
+	sut := newTransportSUT(stub.NewLoggerStub(), stub.NewSenderImpl().Send, newNotifierImpl().notify, json.Marshal, newCleanUpImpl().CleanUp)
 	event := stub.NewEvent()
 
 	_, results := sut.run(newEdgeXContextImpl(), event)
-	sut.waitForCompletion()
+	sut.CleanUp()
 
 	assertResultsEqualExpectedEvents(t, []models.Event{event}, results)
 }
 
 func TestCallTransportWithEventParametersReturnsPassedEventParameters(t *testing.T) {
-	sut := newSUT(stub.NewLoggerStub(), stub.NewSenderImpl().Send, newNotifierImpl().notify, json.Marshal)
+	sut := newTransportSUT(stub.NewLoggerStub(), stub.NewSenderImpl().Send, newNotifierImpl().notify, json.Marshal, newCleanUpImpl().CleanUp)
 	event1 := stub.NewEvent()
 	event2 := stub.NewEvent()
 
 	_, results := sut.run(newEdgeXContextImpl(), event1, event2)
-	sut.waitForCompletion()
+	sut.CleanUp()
 
 	assertResultsEqualExpectedEvents(t, []models.Event{event1, event2}, results)
 }
 
 func TestCallWithEventParameterCallsSenderOnce(t *testing.T) {
 	sender := stub.NewSenderImpl()
-	sut := newSUT(stub.NewLoggerStub(), sender.Send, newNotifierImpl().notify, json.Marshal)
+	sut := newTransportSUT(stub.NewLoggerStub(), sender.Send, newNotifierImpl().notify, json.Marshal, newCleanUpImpl().CleanUp)
 
 	sut.run(newEdgeXContextImpl(), stub.NewEvent())
-	sut.waitForCompletion()
+	sut.CleanUp()
 
 	assert.Equal(t, 1, sender.SendCalledCount)
 }
 
 func TestCallWithEventParameterCallsMarkedAsPushedOnce(t *testing.T) {
 	edgeXContext := newEdgeXContextImpl()
-	sut := newSUT(stub.NewLoggerStub(), stub.NewSenderImpl().Send, newNotifierImpl().notify, json.Marshal)
+	sut := newTransportSUT(stub.NewLoggerStub(), stub.NewSenderImpl().Send, newNotifierImpl().notify, json.Marshal, newCleanUpImpl().CleanUp)
 
 	sut.run(edgeXContext, stub.NewEvent())
-	sut.waitForCompletion()
+	sut.CleanUp()
 
 	assert.Equal(t, 1, edgeXContext.MarkAsPushedCalledCount)
 }
 
 func TestCallWithEventParameterPassesParameterToSender(t *testing.T) {
 	sender := stub.NewSenderImpl()
-	sut := newSUT(stub.NewLoggerStub(), sender.Send, newNotifierImpl().notify, json.Marshal)
+	sut := newTransportSUT(stub.NewLoggerStub(), sender.Send, newNotifierImpl().notify, json.Marshal, newCleanUpImpl().CleanUp)
 	event := stub.NewEvent()
 
 	sut.run(newEdgeXContextImpl(), event)
-	sut.waitForCompletion()
+	sut.CleanUp()
 
 	assertResultsEqualExpectedEvents(
 		t,
@@ -220,32 +230,32 @@ func TestCallWithEventParameterPassesParameterToSender(t *testing.T) {
 
 func TestCallWithEventParametersCallsSenderOnceForEachParameter(t *testing.T) {
 	sender := stub.NewSenderImpl()
-	sut := newSUT(stub.NewLoggerStub(), sender.Send, newNotifierImpl().notify, json.Marshal)
+	sut := newTransportSUT(stub.NewLoggerStub(), sender.Send, newNotifierImpl().notify, json.Marshal, newCleanUpImpl().CleanUp)
 
 	sut.run(newEdgeXContextImpl(), stub.NewEvent(), stub.NewEvent())
-	sut.waitForCompletion()
+	sut.CleanUp()
 
 	assert.Equal(t, 2, sender.SendCalledCount)
 }
 
 func TestCallWithEventParametersCallsMarkedAsPushedOnceForEachParameter(t *testing.T) {
 	edgeXContext := newEdgeXContextImpl()
-	sut := newSUT(stub.NewLoggerStub(), stub.NewSenderImpl().Send, newNotifierImpl().notify, json.Marshal)
+	sut := newTransportSUT(stub.NewLoggerStub(), stub.NewSenderImpl().Send, newNotifierImpl().notify, json.Marshal, newCleanUpImpl().CleanUp)
 
 	sut.run(edgeXContext, stub.NewEvent(), stub.NewEvent())
-	sut.waitForCompletion()
+	sut.CleanUp()
 
 	assert.Equal(t, 2, edgeXContext.MarkAsPushedCalledCount)
 }
 
 func TestCallWithEventParametersPassesParameterToSenderForEachParameter(t *testing.T) {
 	sender := stub.NewSenderImpl()
-	sut := newSUT(stub.NewLoggerStub(), sender.Send, newNotifierImpl().notify, json.Marshal)
+	sut := newTransportSUT(stub.NewLoggerStub(), sender.Send, newNotifierImpl().notify, json.Marshal, newCleanUpImpl().CleanUp)
 	event1 := stub.NewEvent()
 	event2 := stub.NewEvent()
 
 	sut.run(newEdgeXContextImpl(), event1, event2)
-	sut.waitForCompletion()
+	sut.CleanUp()
 
 	assertResultsEqualExpectedEvents(
 		t,
@@ -255,65 +265,85 @@ func TestCallWithEventParametersPassesParameterToSenderForEachParameter(t *testi
 
 func TestMarkAsPushedFailureLogsError(t *testing.T) {
 	loggingClient := stub.NewLoggerStub()
-	sut := newSUT(loggingClient, stub.NewSenderImpl().Send, newNotifierImpl().notify, json.Marshal)
+	sut := newTransportSUT(loggingClient, stub.NewSenderImpl().Send, newNotifierImpl().notify, json.Marshal, newCleanUpImpl().CleanUp)
 	errorMessage := uuid.New().String()
 	edgeXContext := newEdgeXContextImplWithSpecificResult(errors.New(errorMessage))
 
 	sut.run(edgeXContext, stub.NewEvent())
-	sut.waitForCompletion()
+	sut.CleanUp()
 
 	assert.True(t, loggingClient.SpecificErrorOccurred(errorMessage))
 }
 
 func TestMarshalFailureLogsWarning(t *testing.T) {
 	loggingClient := stub.NewLoggerStub()
-	sut := newSUT(loggingClient, stub.NewSenderImpl().Send, newNotifierImpl().notify, helper.FactoryJsonMarshalFuncReturnsFailureOnFirstCall())
+	sut := newTransportSUT(
+		loggingClient,
+		stub.NewSenderImpl().Send,
+		newNotifierImpl().notify,
+		helper.FactoryJsonMarshalFuncReturnsFailureOnFirstCall(),
+		newCleanUpImpl().CleanUp)
 	event := stub.NewEvent()
 
 	sut.run(newEdgeXContextImpl(), event)
-	sut.waitForCompletion()
+	sut.CleanUp()
 
 	assert.True(t, loggingClient.SpecificWarningOccurred(marshalFailedLogMessage(event.ID, helper.JsonMarshalFuncFailureMessage)))
 }
 
 func TestMarshalSuccessDoesNotLogWarning(t *testing.T) {
 	loggingClient := stub.NewLoggerStub()
-	sut := newSUT(loggingClient, stub.NewSenderImpl().Send, newNotifierImpl().notify, json.Marshal)
+	sut := newTransportSUT(loggingClient, stub.NewSenderImpl().Send, newNotifierImpl().notify, json.Marshal, newCleanUpImpl().CleanUp)
 	event := stub.NewEvent()
 
 	sut.run(newEdgeXContextImpl(), event)
-	sut.waitForCompletion()
+	sut.CleanUp()
 
 	assert.False(t, loggingClient.SpecificWarningOccurred(marshalFailedLogMessage(event.ID, helper.JsonMarshalFuncFailureMessage)))
 }
 
 func TestMarshalFailureDoesNotCallSender(t *testing.T) {
 	sender := stub.NewSenderImpl()
-	sut := newSUT(stub.NewLoggerStub(), sender.Send, newNotifierImpl().notify, helper.FactoryJsonMarshalFuncReturnsFailureOnFirstCall())
+	sut := newTransportSUT(
+		stub.NewLoggerStub(),
+		sender.Send,
+		newNotifierImpl().notify,
+		helper.FactoryJsonMarshalFuncReturnsFailureOnFirstCall(),
+		newCleanUpImpl().CleanUp)
 
 	sut.run(newEdgeXContextImpl(), stub.NewEvent())
-	sut.waitForCompletion()
+	sut.CleanUp()
 
 	assert.Equal(t, 0, sender.SendCalledCount)
 }
 
 func TestMarshalFailureOnlyAffectsFailedParameter(t *testing.T) {
 	sender := stub.NewSenderImpl()
-	sut := newSUT(stub.NewLoggerStub(), sender.Send, newNotifierImpl().notify, helper.FactoryJsonMarshalFuncReturnsFailureOnFirstCall())
+	sut := newTransportSUT(
+		stub.NewLoggerStub(),
+		sender.Send,
+		newNotifierImpl().notify,
+		helper.FactoryJsonMarshalFuncReturnsFailureOnFirstCall(),
+		newCleanUpImpl().CleanUp)
 
 	sut.run(newEdgeXContextImpl(), stub.NewEvent(), stub.NewEvent())
-	sut.waitForCompletion()
+	sut.CleanUp()
 
 	assert.Equal(t, 1, sender.SendCalledCount)
 }
 
 func TestCallWithEventParametersDoesNotPassParameterToSenderWhenMarshalFails(t *testing.T) {
 	sender := stub.NewSenderImpl()
-	sut := newSUT(stub.NewLoggerStub(), sender.Send, newNotifierImpl().notify, helper.FactoryJsonMarshalFuncReturnsFailureOnFirstCall())
+	sut := newTransportSUT(
+		stub.NewLoggerStub(),
+		sender.Send,
+		newNotifierImpl().notify,
+		helper.FactoryJsonMarshalFuncReturnsFailureOnFirstCall(),
+		newCleanUpImpl().CleanUp)
 	event2 := stub.NewEvent()
 
 	sut.run(newEdgeXContextImpl(), stub.NewEvent(), event2)
-	sut.waitForCompletion()
+	sut.CleanUp()
 
 	assertResultsEqualExpectedEvents(
 		t,
@@ -323,44 +353,44 @@ func TestCallWithEventParametersDoesNotPassParameterToSenderWhenMarshalFails(t *
 
 func TestSenderFailureResultsInRetry(t *testing.T) {
 	sender := stub.NewSenderImplWithResultFunc(factorySendResultFalseOnceThenTrueFromThenOn())
-	sut := newSUT(stub.NewLoggerStub(), sender.Send, newNotifierImpl().notify, json.Marshal)
+	sut := newTransportSUT(stub.NewLoggerStub(), sender.Send, newNotifierImpl().notify, json.Marshal, newCleanUpImpl().CleanUp)
 
 	sut.run(newEdgeXContextImpl(), stub.NewEvent())
-	sut.waitForCompletion()
+	sut.CleanUp()
 
 	assert.Equal(t, 2, sender.SendCalledCount)
 }
 
 func TestSenderFailureRetryOnlyCallsMarkAsPushedOnce(t *testing.T) {
 	sender := stub.NewSenderImplWithResultFunc(factorySendResultFalseOnceThenTrueFromThenOn())
-	sut := newSUT(stub.NewLoggerStub(), sender.Send, newNotifierImpl().notify, json.Marshal)
+	sut := newTransportSUT(stub.NewLoggerStub(), sender.Send, newNotifierImpl().notify, json.Marshal, newCleanUpImpl().CleanUp)
 	edgeXContext := newEdgeXContextImpl()
 
 	sut.run(edgeXContext, stub.NewEvent())
-	sut.waitForCompletion()
+	sut.CleanUp()
 
 	assert.Equal(t, 1, edgeXContext.MarkAsPushedCalledCount)
 }
 
 func TestSenderFailureResultsInDelayBeforeRetry(t *testing.T) {
 	sender := stub.NewSenderImplWithResultFunc(factorySendResultFalseOnceThenTrueFromThenOn())
-	sut := newSUT(stub.NewLoggerStub(), sender.Send, newNotifierImpl().notify, json.Marshal)
+	sut := newTransportSUT(stub.NewLoggerStub(), sender.Send, newNotifierImpl().notify, json.Marshal, newCleanUpImpl().CleanUp)
 
 	sut.run(newEdgeXContextImpl(), stub.NewEvent())
-	sut.waitForCompletion()
+	sut.CleanUp()
 
 	assert.Len(t, sender.Sent, 2)
-	assert.True(t, sender.Sent[1].When.UnixNano()-sender.Sent[0].When.UnixNano() > sendFailureWaitInNanosecondsForTesting)
+	assert.True(t, sender.Sent[1].When.UnixNano()-sender.Sent[0].When.UnixNano() >= sendFailureWaitInNanosecondsForTesting)
 }
 
 func TestIfSenderCalledThenDebugLogged(t *testing.T) {
 	loggingClient := stub.NewLoggerStub()
 	sender := stub.NewSenderImpl()
-	sut := newSUT(loggingClient, sender.Send, newNotifierImpl().notify, json.Marshal)
+	sut := newTransportSUT(loggingClient, sender.Send, newNotifierImpl().notify, json.Marshal, newCleanUpImpl().CleanUp)
 	event := stub.NewEvent()
 
 	sut.run(newEdgeXContextImpl(), event)
-	sut.waitForCompletion()
+	sut.CleanUp()
 
 	assert.Equal(t, 1, sender.SendCalledCount)
 	assert.True(t, loggingClient.SpecificDebugOccurred(sentLogMessage(event.ID)))
@@ -368,22 +398,22 @@ func TestIfSenderCalledThenDebugLogged(t *testing.T) {
 
 func TestCallWithEventForNewDeviceCallsNotifier(t *testing.T) {
 	notifier := newNotifierImpl()
-	sut := newSUT(stub.NewLoggerStub(), stub.NewSenderImpl().Send, notifier.notify, json.Marshal)
+	sut := newTransportSUT(stub.NewLoggerStub(), stub.NewSenderImpl().Send, notifier.notify, json.Marshal, newCleanUpImpl().CleanUp)
 	event := stub.NewEvent()
 
 	sut.run(newEdgeXContextImpl(), event)
-	sut.waitForCompletion()
+	sut.CleanUp()
 
 	assert.Equal(t, 1, notifier.NotifyCalledCount)
 }
 
 func TestCallWithEventForNewDeviceCallsNotifierWithPassedEventParameter(t *testing.T) {
 	notifier := newNotifierImpl()
-	sut := newSUT(stub.NewLoggerStub(), stub.NewSenderImpl().Send, notifier.notify, json.Marshal)
+	sut := newTransportSUT(stub.NewLoggerStub(), stub.NewSenderImpl().Send, notifier.notify, json.Marshal, newCleanUpImpl().CleanUp)
 	event := stub.NewEvent()
 
 	sut.run(newEdgeXContextImpl(), event)
-	sut.waitForCompletion()
+	sut.CleanUp()
 
 	assert.Len(t, notifier.Notified, 1)
 	assert.Equal(t, event, notifier.Notified[0])
@@ -391,32 +421,32 @@ func TestCallWithEventForNewDeviceCallsNotifierWithPassedEventParameter(t *testi
 
 func TestCallWithEventsForNewDeviceCallsNotifier(t *testing.T) {
 	notifier := newNotifierImpl()
-	sut := newSUT(stub.NewLoggerStub(), stub.NewSenderImpl().Send, notifier.notify, json.Marshal)
+	sut := newTransportSUT(stub.NewLoggerStub(), stub.NewSenderImpl().Send, notifier.notify, json.Marshal, newCleanUpImpl().CleanUp)
 
 	sut.run(newEdgeXContextImpl(), stub.NewEvent(), stub.NewEvent())
-	sut.waitForCompletion()
+	sut.CleanUp()
 
 	assert.Equal(t, 1, notifier.NotifyCalledCount)
 }
 
 func TestCallWithEventsForNewDevicesCallsNotifier(t *testing.T) {
 	notifier := newNotifierImpl()
-	sut := newSUT(stub.NewLoggerStub(), stub.NewSenderImpl().Send, notifier.notify, json.Marshal)
+	sut := newTransportSUT(stub.NewLoggerStub(), stub.NewSenderImpl().Send, notifier.notify, json.Marshal, newCleanUpImpl().CleanUp)
 
 	sut.run(newEdgeXContextImpl(), stub.NewEventForDevice("device1"), stub.NewEventForDevice("device2"))
-	sut.waitForCompletion()
+	sut.CleanUp()
 
 	assert.Equal(t, 2, notifier.NotifyCalledCount)
 }
 
 func TestCallWithEventsForNewDevicesCallsNotifierWithPassedEventParameters(t *testing.T) {
 	notifier := newNotifierImpl()
-	sut := newSUT(stub.NewLoggerStub(), stub.NewSenderImpl().Send, notifier.notify, json.Marshal)
+	sut := newTransportSUT(stub.NewLoggerStub(), stub.NewSenderImpl().Send, notifier.notify, json.Marshal, newCleanUpImpl().CleanUp)
 	event1 := stub.NewEventForDevice("device1")
 	event2 := stub.NewEventForDevice("device2")
 
 	sut.run(newEdgeXContextImpl(), event1, event2)
-	sut.waitForCompletion()
+	sut.CleanUp()
 
 	assert.Len(t, notifier.Notified, 2)
 	assert.Equal(t, event1, notifier.Notified[0])
@@ -425,11 +455,11 @@ func TestCallWithEventsForNewDevicesCallsNotifierWithPassedEventParameters(t *te
 
 func TestNotifierSuccessLogsDebug(t *testing.T) {
 	loggingClient := stub.NewLoggerStub()
-	sut := newSUT(loggingClient, stub.NewSenderImpl().Send, newNotifierImpl().notify, json.Marshal)
+	sut := newTransportSUT(loggingClient, stub.NewSenderImpl().Send, newNotifierImpl().notify, json.Marshal, newCleanUpImpl().CleanUp)
 	event := stub.NewEvent()
 
 	sut.run(newEdgeXContextImpl(), event)
-	sut.waitForCompletion()
+	sut.CleanUp()
 
 	assert.True(t, loggingClient.SpecificDebugOccurred(detectedNewDeviceLogMessage(event.Device)))
 }
@@ -437,22 +467,22 @@ func TestNotifierSuccessLogsDebug(t *testing.T) {
 func TestNotifierFailureDoesNotCauseLoggedDebug(t *testing.T) {
 	loggingClient := stub.NewLoggerStub()
 	notifier := newNotifierImplWithSpecificResult(false)
-	sut := newSUT(loggingClient, stub.NewSenderImpl().Send, notifier.notify, json.Marshal)
+	sut := newTransportSUT(loggingClient, stub.NewSenderImpl().Send, notifier.notify, json.Marshal, newCleanUpImpl().CleanUp)
 	event := stub.NewEvent()
 
 	sut.run(newEdgeXContextImpl(), event)
-	sut.waitForCompletion()
+	sut.CleanUp()
 
 	assert.False(t, loggingClient.SpecificDebugOccurred(detectedNewDeviceLogMessage(event.Device)))
 }
 
 func TestNotifierSuccessDoesNotCallNotifierAgainForSameDevice(t *testing.T) {
 	notifier := newNotifierImpl()
-	sut := newSUT(stub.NewLoggerStub(), stub.NewSenderImpl().Send, notifier.notify, json.Marshal)
+	sut := newTransportSUT(stub.NewLoggerStub(), stub.NewSenderImpl().Send, notifier.notify, json.Marshal, newCleanUpImpl().CleanUp)
 	event := stub.NewEvent()
 
 	sut.run(newEdgeXContextImpl(), event, event)
-	sut.waitForCompletion()
+	sut.CleanUp()
 
 	assert.Len(t, notifier.Notified, 1)
 	assert.Equal(t, event, notifier.Notified[0])
@@ -460,11 +490,20 @@ func TestNotifierSuccessDoesNotCallNotifierAgainForSameDevice(t *testing.T) {
 
 func TestNotifierFailureCallsNotifierAgainForSameDevice(t *testing.T) {
 	notifier := newNotifierImplWithSpecificResult(false)
-	sut := newSUT(stub.NewLoggerStub(), stub.NewSenderImpl().Send, notifier.notify, json.Marshal)
+	sut := newTransportSUT(stub.NewLoggerStub(), stub.NewSenderImpl().Send, notifier.notify, json.Marshal, newCleanUpImpl().CleanUp)
 	event := stub.NewEvent()
 
 	sut.run(newEdgeXContextImpl(), event, event)
-	sut.waitForCompletion()
+	sut.CleanUp()
 
 	assert.Equal(t, 2, notifier.NotifyCalledCount)
+}
+
+func TestCleanUpCallsCleanUpImpl(t *testing.T) {
+	cleanUp := newCleanUpImpl()
+	sut := newTransportSUT(stub.NewLoggerStub(), stub.NewSenderImpl().Send, newNotifierImpl().notify, json.Marshal, cleanUp.CleanUp)
+
+	sut.cleanUp()
+
+	assert.Equal(t, 1, cleanUp.CleanUpCalledCount)
 }

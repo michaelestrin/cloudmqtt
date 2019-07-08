@@ -17,6 +17,7 @@ package impl
 import (
 	"crypto/tls"
 	"fmt"
+	"github.com/dell-iot/cloudmqtt/internal/cloudmqtt/contract"
 	mqttlib "github.com/eclipse/paho.mqtt.golang"
 	"github.com/edgexfoundry/go-mod-core-contracts/clients/logger"
 	"os"
@@ -31,6 +32,8 @@ type mqtt struct {
 	client         mqttlib.Client
 	eventTopic     string
 	newDeviceTopic string
+	commandTopic   string
+	receiver       contract.Receiver
 }
 
 // NewMqttInstanceForCloud is a constructor that returns an mqtt receiver configured for cloud-based MQTTS.
@@ -43,19 +46,23 @@ func NewMqttInstanceForCloud(
 	password string,
 	server string,
 	eventTopic string,
-	newDeviceTopic string) (q *mqtt) {
+	newDeviceTopic string,
+	commandTopic string,
+	receiver contract.Receiver) (q *mqtt) {
 
 	q = &mqtt{
 		loggingClient:  loggingClient,
 		eventTopic:     eventTopic,
 		newDeviceTopic: newDeviceTopic,
+		commandTopic:   commandTopic,
+		receiver:       receiver,
 	}
 
 	tlsConfig := &tls.Config{}
 	if len(certFile) > 0 && len(keyFile) > 0 {
 		cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 		if err != nil {
-			loggingClient.Error(fmt.Sprintf("mqtt.mqttInstanceForCloud LoadX509KeyPair failed: %v", err))
+			q.loggingClient.Error(fmt.Sprintf("mqtt mqttInstanceForCloud LoadX509KeyPair failed: %v", err))
 			os.Exit(-1)
 		}
 		tlsConfig.Certificates = []tls.Certificate{cert}
@@ -78,9 +85,20 @@ func NewMqttInstanceForCloud(
 	q.client = mqttlib.NewClient(&options)
 
 	if token := q.client.Connect(); token.Wait() && token.Error() != nil {
-		panic(token.Error())
+		q.loggingClient.Error(fmt.Sprintf("mqtt mqttInstanceForCloud Connect failed: %v", token.Error()))
+		os.Exit(-1)
+	}
+
+	if token := q.client.Subscribe(commandTopic, 1, q.receive); token.Wait() && token.Error() != nil {
+		q.loggingClient.Error(fmt.Sprintf("mqtt mqttInstanceForCloud Subscribe failed: %v", token.Error()))
+		os.Exit(-1)
 	}
 	return
+}
+
+// receive delegates handling of southbound command to provided receiver contract implementation.
+func (q *mqtt) receive(client mqttlib.Client, message mqttlib.Message) {
+	q.receiver(string(message.Payload()))
 }
 
 // send function publishes content on designated northbound MQTT topic.
@@ -100,4 +118,10 @@ func (q *mqtt) EventSender(content []byte) bool {
 // NewDeviceSender method transmits content to northbound MQTT new device topic.
 func (q *mqtt) NewDeviceSender(content []byte) bool {
 	return send(q, q.newDeviceTopic, content)
+}
+
+func (q *mqtt) CleanUp() {
+	if token := q.client.Unsubscribe(q.commandTopic); token.Wait() && token.Error() != nil {
+		q.loggingClient.Error(fmt.Sprintf("mqtt mqttInstanceForCloud Unsubscribe failed: %v", token.Error()))
+	}
 }
