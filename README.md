@@ -1,6 +1,6 @@
-## michaelestrin/cloudmqtt -- Example EdgeX-Cloud MQTTS Service
+# michaelestrin/cloudmqtt -- Example EdgeX-Cloud MQTTS Service
 
-### Overview
+## Overview
 
 This service is build upon the EdgeX Applications Functions SDK.  
 
@@ -13,7 +13,7 @@ It receives southbound commands and logs them.  As there is no defined standard 
     via MQTT message into specific core-command api calls, the provided `impl.commandHandler.Receiver` must be modified
     to translate the incoming command string into call to appropriate core-command endpoint.
 
-### Table of Contents
+## Table of Contents
 
 - [Basic Setup and Usage](#basic-setup-and-usage)
     - [External Service Dependencies](#external-service-dependencies)
@@ -23,9 +23,9 @@ It receives southbound commands and logs them.  As there is no defined standard 
     - [Project Layout](#project-layout)
     - [Assumptions](#assumptions)
 
-### Basic Setup And Usage
+## Basic Setup And Usage
 
-## External Service Dependencies
+### External Service Dependencies
 
 This service requires a running instance of EdgeX.
 
@@ -35,7 +35,7 @@ During development, I used the tip of master (updating as changes were made) of
     locally. Since this sample service is build upon the EdgeX Applications Functions SDK, it required a post-Delhi 
     release version of the source.  
     
-## Configuration
+### Configuration
 
 This service is driven by a `configuration.toml` [TOML-based](https://en.wikipedia.org/wiki/TOML) file that resides in
     the directory the application is executed from.  The configuration file extends the configuration file defined by 
