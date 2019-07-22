@@ -22,6 +22,8 @@ It receives southbound commands and logs them.  As there is no defined standard 
     - [Architecture](#architecture)
     - [Project Layout](#project-layout)
     - [Assumptions](#assumptions)
+- [Connecting to the Cloud](#connecting-to-the-cloud)
+    
 
 ## Basic Setup And Usage
 
@@ -102,3 +104,11 @@ internal/                - private application and library code
 - Device metadata and the first reading for a device may be received by the northbound application in an unpredictable 
     order.  That is, the new device's first reading may show up before, at the same time as, or after the device's 
     metadata. 
+    
+## Connecting to the Cloud
+
+[Connecting to AWS IoT](docs/aws/README.md)
+
+[Connecting to Azure IoT](docs/azure/README.md)
+
+[Connecting to Dell Boomi](docs/boomi/README.md)
