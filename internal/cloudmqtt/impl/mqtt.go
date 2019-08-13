@@ -17,9 +17,9 @@ package impl
 import (
 	"crypto/tls"
 	"fmt"
-	"github.com/dell-iot/cloudmqtt/internal/cloudmqtt/contract"
 	mqttlib "github.com/eclipse/paho.mqtt.golang"
 	"github.com/edgexfoundry/go-mod-core-contracts/clients/logger"
+	"github.com/michaelestrin/cloudmqtt/internal/cloudmqtt/contract"
 	"os"
 	"time"
 )

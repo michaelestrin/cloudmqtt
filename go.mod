@@ -1,4 +1,4 @@
-module github.com/dell-iot/cloudmqtt
+module github.com/michaelestrin/cloudmqtt
 
 require (
 	github.com/eclipse/paho.mqtt.golang v1.2.0

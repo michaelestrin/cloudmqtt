@@ -16,8 +16,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/dell-iot/cloudmqtt/internal/cloudmqtt"
 	"github.com/edgexfoundry/app-functions-sdk-go/appsdk"
+	"github.com/michaelestrin/cloudmqtt/internal/cloudmqtt"
 )
 
 // main leverages the EdgeX Applications Functions SDK to create one-way export of device metadata and readings to

@@ -15,9 +15,9 @@
 package impl
 
 import (
-	"github.com/dell-iot/cloudmqtt/internal/cloudmqtt/test/stub"
 	"github.com/edgexfoundry/go-mod-core-contracts/clients/logger"
 	"github.com/google/uuid"
+	"github.com/michaelestrin/cloudmqtt/internal/cloudmqtt/test/stub"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

@@ -16,10 +16,10 @@ package cloudmqtt
 
 import (
 	"fmt"
-	"github.com/dell-iot/cloudmqtt/internal/cloudmqtt/contract"
 	"github.com/edgexfoundry/app-functions-sdk-go/appcontext"
 	"github.com/edgexfoundry/go-mod-core-contracts/clients/logger"
 	"github.com/edgexfoundry/go-mod-core-contracts/models"
+	"github.com/michaelestrin/cloudmqtt/internal/cloudmqtt/contract"
 	"sync"
 	"time"
 )

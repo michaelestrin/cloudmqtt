@@ -17,9 +17,9 @@ package impl
 import (
 	"context"
 	"fmt"
-	"github.com/dell-iot/cloudmqtt/internal/cloudmqtt/contract"
 	"github.com/edgexfoundry/go-mod-core-contracts/clients/logger"
 	"github.com/edgexfoundry/go-mod-core-contracts/models"
+	"github.com/michaelestrin/cloudmqtt/internal/cloudmqtt/contract"
 )
 
 // notify is a receiver wrapping a metadata query-and-forward implementation.

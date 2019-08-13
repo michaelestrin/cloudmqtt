@@ -17,12 +17,12 @@ package cloudmqtt
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/dell-iot/cloudmqtt/internal/cloudmqtt/impl"
 	"github.com/edgexfoundry/app-functions-sdk-go/appsdk"
 	"github.com/edgexfoundry/go-mod-core-contracts/clients"
 	"github.com/edgexfoundry/go-mod-core-contracts/clients/logger"
 	"github.com/edgexfoundry/go-mod-core-contracts/clients/metadata"
 	"github.com/edgexfoundry/go-mod-core-contracts/clients/types"
+	"github.com/michaelestrin/cloudmqtt/internal/cloudmqtt/impl"
 	"os"
 	"time"
 )
